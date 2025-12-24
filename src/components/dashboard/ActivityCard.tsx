@@ -1,5 +1,14 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MoreVertical, TrendingUp } from 'lucide-react';
+import { MoreVertical, TrendingUp, Trash2, PlusCircle } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useWallet } from '@/contexts/WalletContext';
+import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
 type DbActivity = Tables<'activities'>;
@@ -12,12 +21,51 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({ activity, color, index, onClick }: ActivityCardProps) {
+  const [showAddAmount, setShowAddAmount] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { deleteActivity, allocateToActivity, getUnallocatedBalance } = useWallet();
+  
   const allocatedAmount = Number(activity.allocated_amount);
   const targetAmount = Number(activity.target_amount || 0);
   
   const progress = targetAmount > 0 
     ? (allocatedAmount / targetAmount) * 100 
     : 0;
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (allocatedAmount > 0) {
+      toast.error('Cannot delete activity with allocated funds');
+      return;
+    }
+    const success = await deleteActivity(activity.id);
+    if (success) {
+      toast.success('Activity deleted');
+    }
+  };
+
+  const handleAddAmount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      toast.error('Enter a valid amount');
+      return;
+    }
+    if (numAmount > getUnallocatedBalance()) {
+      toast.error('Insufficient unallocated balance');
+      return;
+    }
+    setIsSubmitting(true);
+    const success = await allocateToActivity(activity.id, numAmount);
+    setIsSubmitting(false);
+    if (success) {
+      toast.success(`₹${numAmount.toLocaleString('en-IN')} added to ${activity.name}`);
+      setAmount('');
+      setShowAddAmount(false);
+    }
+  };
   
   return (
     <motion.div
@@ -54,9 +102,26 @@ export function ActivityCard({ activity, color, index, onClick }: ActivityCardPr
             </p>
           )}
         </div>
-        <button className="p-1 hover:bg-muted rounded-lg transition-colors">
-          <MoreVertical className="h-4 w-4 text-muted-foreground" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <button className="p-1 hover:bg-muted rounded-lg transition-colors">
+              <MoreVertical className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => setShowAddAmount(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Amount
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={handleDelete}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="pl-3">
@@ -89,6 +154,41 @@ export function ActivityCard({ activity, color, index, onClick }: ActivityCardPr
               {progress.toFixed(0)}% allocated
             </span>
           </div>
+        )}
+
+        {/* Inline Add Amount Form */}
+        {showAddAmount && (
+          <motion.form
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            onSubmit={handleAddAmount}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-3 flex gap-2"
+          >
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Amount"
+              className="flex-1 px-3 py-1.5 text-sm bg-muted rounded-lg border border-border focus:outline-none focus:ring-1 focus:ring-primary"
+              autoFocus
+            />
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAddAmount(false)}
+              className="px-3 py-1.5 text-sm bg-muted text-muted-foreground rounded-lg hover:bg-muted/80"
+            >
+              Cancel
+            </button>
+          </motion.form>
         )}
       </div>
     </motion.div>
