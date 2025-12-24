@@ -1,0 +1,9 @@
+{
+  "appId": "app.lovable.4631025c03664e6e8d5cb077579bbaea",
+  "appName": "MoneyFlow",
+  "webDir": "dist",
+  "server": {
+    "url": "https://4631025c-0366-4e6e-8d5c-b077579bbaea.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  }
+}
