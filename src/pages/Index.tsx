@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { WalletScene } from '@/components/3d/WalletScene';
 import { WalletCard } from '@/components/dashboard/WalletCard';
@@ -6,11 +7,34 @@ import { ActivitiesList } from '@/components/dashboard/ActivitiesList';
 import { AddActivityModal } from '@/components/modals/AddActivityModal';
 import { AddMoneyModal } from '@/components/modals/AddMoneyModal';
 import { SegregateModal } from '@/components/modals/SegregateModal';
+import { useAuth } from '@/hooks/useAuth';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const [showAddActivity, setShowAddActivity] = useState(false);
   const [showAddMoney, setShowAddMoney] = useState(false);
   const [showSegregate, setShowSegregate] = useState(false);
+  
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
