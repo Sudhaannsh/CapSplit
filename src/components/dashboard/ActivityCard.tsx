@@ -1,16 +1,22 @@
 import { motion } from 'framer-motion';
-import { Activity } from '@/store/useWalletStore';
 import { MoreVertical, TrendingUp } from 'lucide-react';
+import type { Tables } from '@/integrations/supabase/types';
+
+type DbActivity = Tables<'activities'>;
 
 interface ActivityCardProps {
-  activity: Activity;
+  activity: DbActivity;
+  color: string;
   index: number;
   onClick?: () => void;
 }
 
-export function ActivityCard({ activity, index, onClick }: ActivityCardProps) {
-  const progress = activity.targetBudget > 0 
-    ? (activity.allocatedAmount / activity.targetBudget) * 100 
+export function ActivityCard({ activity, color, index, onClick }: ActivityCardProps) {
+  const allocatedAmount = Number(activity.allocated_amount);
+  const targetAmount = Number(activity.target_amount || 0);
+  
+  const progress = targetAmount > 0 
+    ? (allocatedAmount / targetAmount) * 100 
     : 0;
   
   return (
@@ -26,14 +32,14 @@ export function ActivityCard({ activity, index, onClick }: ActivityCardProps) {
       {/* Gradient accent bar */}
       <div 
         className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
-        style={{ backgroundColor: activity.color }}
+        style={{ backgroundColor: color }}
       />
       
       {/* Glow effect on hover */}
       <div 
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
         style={{ 
-          background: `radial-gradient(circle at 50% 50%, ${activity.color}20, transparent 70%)`
+          background: `radial-gradient(circle at 50% 50%, ${color}20, transparent 70%)`
         }}
       />
 
@@ -56,11 +62,11 @@ export function ActivityCard({ activity, index, onClick }: ActivityCardProps) {
       <div className="pl-3">
         <div className="flex items-baseline gap-2 mb-2">
           <span className="text-xl font-display font-bold amount-display">
-            ₹{activity.allocatedAmount.toLocaleString('en-IN')}
+            ₹{allocatedAmount.toLocaleString('en-IN')}
           </span>
-          {activity.targetBudget > 0 && (
+          {targetAmount > 0 && (
             <span className="text-xs text-muted-foreground">
-              / ₹{activity.targetBudget.toLocaleString('en-IN')}
+              / ₹{targetAmount.toLocaleString('en-IN')}
             </span>
           )}
         </div>
@@ -72,14 +78,14 @@ export function ActivityCard({ activity, index, onClick }: ActivityCardProps) {
             animate={{ width: `${Math.min(progress, 100)}%` }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             className="h-full rounded-full"
-            style={{ backgroundColor: activity.color }}
+            style={{ backgroundColor: color }}
           />
         </div>
 
         {progress > 0 && (
           <div className="flex items-center gap-1 mt-2">
-            <TrendingUp className="h-3 w-3" style={{ color: activity.color }} />
-            <span className="text-xs" style={{ color: activity.color }}>
+            <TrendingUp className="h-3 w-3" style={{ color }} />
+            <span className="text-xs" style={{ color }}>
               {progress.toFixed(0)}% allocated
             </span>
           </div>

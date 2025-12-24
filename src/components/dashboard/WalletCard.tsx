@@ -1,15 +1,21 @@
 import { motion } from 'framer-motion';
-import { useWalletStore } from '@/store/useWalletStore';
-import { TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useWallet } from '@/contexts/WalletContext';
+import { TrendingUp, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 
 export function WalletCard() {
-  const balance = useWalletStore((state) => state.balance);
-  const getUnallocatedBalance = useWalletStore((state) => state.getUnallocatedBalance);
-  const getTotalAllocated = useWalletStore((state) => state.getTotalAllocated);
+  const { balance, getUnallocatedBalance, getTotalAllocated, loading } = useWallet();
   
   const unallocated = getUnallocatedBalance();
   const allocated = getTotalAllocated();
   const allocationPercent = balance > 0 ? (allocated / balance) * 100 : 0;
+
+  if (loading) {
+    return (
+      <div className="glass-card p-6 mx-4 flex items-center justify-center min-h-[180px]">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <motion.div

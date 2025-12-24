@@ -2,11 +2,20 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Float, Sphere, MeshDistortMaterial } from '@react-three/drei';
 import { useRef, Suspense } from 'react';
 import * as THREE from 'three';
-import { useWalletStore } from '@/store/useWalletStore';
+import { useWallet } from '@/contexts/WalletContext';
+
+const ACTIVITY_COLORS = [
+  '#3dd9d0',
+  '#4ade80',
+  '#a78bfa',
+  '#fb923c',
+  '#f472b6',
+  '#facc15',
+];
 
 function WalletOrb() {
   const meshRef = useRef<THREE.Mesh>(null);
-  const balance = useWalletStore((state) => state.balance);
+  const { balance } = useWallet();
   
   // Scale based on balance (subtle effect)
   const scale = 1 + Math.min(balance / 100000, 0.5);
@@ -30,8 +39,8 @@ function WalletOrb() {
 }
 
 function ActivityOrbs() {
-  const activities = useWalletStore((state) => state.activities);
-  const totalAllocated = useWalletStore((state) => state.getTotalAllocated());
+  const { activities, getTotalAllocated } = useWallet();
+  const totalAllocated = getTotalAllocated();
   
   return (
     <group>
@@ -42,16 +51,18 @@ function ActivityOrbs() {
         const z = Math.sin(angle) * radius;
         
         // Size based on allocation
-        const size = 0.3 + (activity.allocatedAmount / Math.max(totalAllocated, 1)) * 0.4;
+        const allocatedAmount = Number(activity.allocated_amount);
+        const size = 0.3 + (allocatedAmount / Math.max(totalAllocated, 1)) * 0.4;
+        const color = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
         
         return (
           <Float key={activity.id} speed={3} rotationIntensity={0.3} floatIntensity={0.3}>
             <Sphere args={[size, 32, 32]} position={[x, 0, z]}>
               <meshStandardMaterial
-                color={activity.color}
+                color={color}
                 roughness={0.3}
                 metalness={0.6}
-                emissive={activity.color}
+                emissive={color}
                 emissiveIntensity={0.2}
               />
             </Sphere>
