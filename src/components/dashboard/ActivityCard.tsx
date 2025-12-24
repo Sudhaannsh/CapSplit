@@ -77,9 +77,21 @@ export function ActivityCard({ activity, color, index, onClick }: ActivityCardPr
       onClick={onClick}
       className="glass-card p-4 cursor-pointer relative overflow-hidden group"
     >
+      {/* Activity Image Background */}
+      {activity.image_url && (
+        <div 
+          className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300"
+          style={{ 
+            backgroundImage: `url(${activity.image_url})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
+        />
+      )}
+      
       {/* Gradient accent bar */}
       <div 
-        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl z-10"
         style={{ backgroundColor: color }}
       />
       
