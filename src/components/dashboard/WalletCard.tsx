@@ -25,11 +25,19 @@ export function WalletCard() {
       className="glass-card p-6 mx-4"
     >
       <div className="flex items-start justify-between mb-4">
-        <div>
-          <p className="text-sm text-muted-foreground font-medium">Total Balance</p>
-          <h2 className="text-3xl font-display font-bold amount-display mt-1">
-            ₹{balance.toLocaleString('en-IN')}
-          </h2>
+        <div className="flex gap-6">
+          <div>
+            <p className="text-sm text-muted-foreground font-medium">Total Balance</p>
+            <h2 className="text-3xl font-display font-bold amount-display mt-1">
+              ₹{balance.toLocaleString('en-IN')}
+            </h2>
+          </div>
+          <div className="border-l border-border pl-6">
+            <p className="text-sm text-muted-foreground font-medium">Wallet Balance</p>
+            <h2 className="text-3xl font-display font-bold amount-display mt-1 text-primary">
+              ₹{unallocated.toLocaleString('en-IN')}
+            </h2>
+          </div>
         </div>
         <div className="p-2 rounded-xl bg-primary/10">
           <TrendingUp className="h-5 w-5 text-primary" />
