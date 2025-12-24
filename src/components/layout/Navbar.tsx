@@ -1,6 +1,8 @@
-import { Plus, Wallet, ArrowLeftRight } from 'lucide-react';
+import { Plus, Wallet, ArrowLeftRight, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface NavbarProps {
   onAddActivity: () => void;
@@ -9,6 +11,13 @@ interface NavbarProps {
 }
 
 export function Navbar({ onAddActivity, onAddMoney, onSegregate }: NavbarProps) {
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success('Signed out successfully');
+  };
+
   return (
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
@@ -49,6 +58,15 @@ export function Navbar({ onAddActivity, onAddMoney, onSegregate }: NavbarProps) 
           >
             <ArrowLeftRight className="h-4 w-4" />
             <span className="hidden sm:inline">Segregate</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSignOut}
+            className="gap-1 text-muted-foreground hover:text-destructive"
+          >
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </div>
