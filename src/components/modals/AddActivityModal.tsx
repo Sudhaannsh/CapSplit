@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useWalletStore } from '@/store/useWalletStore';
+import { useWallet } from '@/contexts/WalletContext';
 import { toast } from 'sonner';
 
 interface AddActivityModalProps {
@@ -16,32 +16,40 @@ export function AddActivityModal({ isOpen, onClose }: AddActivityModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [targetBudget, setTargetBudget] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const addActivity = useWalletStore((state) => state.addActivity);
-  const activities = useWalletStore((state) => state.activities);
+  const { addActivity, getFreeActivityCount } = useWallet();
   
   const freeLimit = 3;
-  const isFree = activities.length < freeLimit;
+  const freeCount = getFreeActivityCount();
+  const isFree = freeCount < freeLimit;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name.trim()) {
       toast.error('Please enter a name for your activity');
       return;
     }
     
-    // For now, just create the activity (payment flow to be added with backend)
-    addActivity({
-      name: name.trim(),
-      description: description.trim(),
-      targetBudget: parseFloat(targetBudget) || 0,
-      color: '',
-    });
+    setIsSubmitting(true);
     
-    toast.success(`Activity "${name}" created!`);
-    setName('');
-    setDescription('');
-    setTargetBudget('');
-    onClose();
+    try {
+      const success = await addActivity({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        targetBudget: parseFloat(targetBudget) || 0,
+        isPaid: !isFree,
+      });
+      
+      if (success) {
+        toast.success(`Activity "${name}" created!`);
+        setName('');
+        setDescription('');
+        setTargetBudget('');
+        onClose();
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -79,7 +87,7 @@ export function AddActivityModal({ isOpen, onClose }: AddActivityModalProps) {
               {!isFree && (
                 <div className="mb-4 p-3 rounded-xl bg-warning/10 border border-warning/20">
                   <p className="text-sm text-warning">
-                    This will be your {activities.length + 1}th activity. A fee of ₹19 will apply.
+                    This will be your {freeCount + 1}th activity. A fee of ₹19 will apply.
                   </p>
                 </div>
               )}
@@ -130,12 +138,19 @@ export function AddActivityModal({ isOpen, onClose }: AddActivityModalProps) {
 
                 <Button 
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                   className="w-full"
                   variant="wallet"
                   size="lg"
                 >
-                  <Plus className="h-5 w-5" />
-                  {isFree ? 'Create Activity' : 'Pay ₹19 & Create'}
+                  {isSubmitting ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="h-5 w-5" />
+                      {isFree ? 'Create Activity' : 'Pay ₹19 & Create'}
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

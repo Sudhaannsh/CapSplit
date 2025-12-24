@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowLeftRight, Check } from 'lucide-react';
+import { X, ArrowLeftRight, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useWalletStore } from '@/store/useWalletStore';
+import { useWallet } from '@/contexts/WalletContext';
 import { toast } from 'sonner';
 
 interface SegregateModalProps {
@@ -12,13 +12,21 @@ interface SegregateModalProps {
   onClose: () => void;
 }
 
+const ACTIVITY_COLORS = [
+  'hsl(160 60% 50%)',
+  'hsl(199 89% 48%)',
+  'hsl(271 81% 56%)',
+  'hsl(25 95% 53%)',
+  'hsl(340 75% 55%)',
+  'hsl(45 93% 47%)',
+];
+
 export function SegregateModal({ isOpen, onClose }: SegregateModalProps) {
   const [amount, setAmount] = useState('');
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const activities = useWalletStore((state) => state.activities);
-  const segregateMoney = useWalletStore((state) => state.segregateMoney);
-  const getUnallocatedBalance = useWalletStore((state) => state.getUnallocatedBalance);
+  const { activities, segregateMoney, getUnallocatedBalance } = useWallet();
 
   const unallocated = getUnallocatedBalance();
 
@@ -36,7 +44,7 @@ export function SegregateModal({ isOpen, onClose }: SegregateModalProps) {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const value = parseFloat(amount);
     if (!value || value <= 0) {
       toast.error('Please enter a valid amount');
@@ -53,15 +61,19 @@ export function SegregateModal({ isOpen, onClose }: SegregateModalProps) {
       return;
     }
 
-    const success = segregateMoney(value, selectedActivities);
-    if (success) {
-      const perActivity = Math.floor(value / selectedActivities.length);
-      toast.success(`Segregated ₹${perActivity.toLocaleString('en-IN')} to each activity`);
-      setAmount('');
-      setSelectedActivities([]);
-      onClose();
-    } else {
-      toast.error('Failed to segregate money');
+    setIsSubmitting(true);
+
+    try {
+      const success = await segregateMoney(value, selectedActivities);
+      if (success) {
+        const perActivity = Math.floor(value / selectedActivities.length);
+        toast.success(`Segregated ₹${perActivity.toLocaleString('en-IN')} to each activity`);
+        setAmount('');
+        setSelectedActivities([]);
+        onClose();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -138,28 +150,31 @@ export function SegregateModal({ isOpen, onClose }: SegregateModalProps) {
                     </div>
                     
                     <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                      {activities.map((activity) => (
-                        <button
-                          key={activity.id}
-                          onClick={() => toggleActivity(activity.id)}
-                          className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
-                            selectedActivities.includes(activity.id)
-                              ? 'border-primary bg-primary/10'
-                              : 'border-border hover:border-muted-foreground'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: activity.color }}
-                            />
-                            <span className="font-medium">{activity.name}</span>
-                          </div>
-                          {selectedActivities.includes(activity.id) && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                        </button>
-                      ))}
+                      {activities.map((activity, index) => {
+                        const color = ACTIVITY_COLORS[index % ACTIVITY_COLORS.length];
+                        return (
+                          <button
+                            key={activity.id}
+                            onClick={() => toggleActivity(activity.id)}
+                            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                              selectedActivities.includes(activity.id)
+                                ? 'border-primary bg-primary/10'
+                                : 'border-border hover:border-muted-foreground'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: color }}
+                              />
+                              <span className="font-medium">{activity.name}</span>
+                            </div>
+                            {selectedActivities.includes(activity.id) && (
+                              <Check className="h-4 w-4 text-primary" />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -176,13 +191,19 @@ export function SegregateModal({ isOpen, onClose }: SegregateModalProps) {
 
                   <Button 
                     onClick={handleSubmit}
+                    disabled={isSubmitting || !amount || selectedActivities.length === 0}
                     className="w-full"
                     variant="gradient"
                     size="lg"
-                    disabled={!amount || selectedActivities.length === 0}
                   >
-                    <ArrowLeftRight className="h-5 w-5" />
-                    Segregate to {selectedActivities.length} {selectedActivities.length === 1 ? 'Activity' : 'Activities'}
+                    {isSubmitting ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        <ArrowLeftRight className="h-5 w-5" />
+                        Segregate to {selectedActivities.length} {selectedActivities.length === 1 ? 'Activity' : 'Activities'}
+                      </>
+                    )}
                   </Button>
                 </div>
               )}

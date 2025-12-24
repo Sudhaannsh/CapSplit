@@ -1,10 +1,18 @@
 import { motion } from 'framer-motion';
-import { useWalletStore } from '@/store/useWalletStore';
+import { useWallet } from '@/contexts/WalletContext';
 import { ActivityCard } from './ActivityCard';
-import { FolderOpen } from 'lucide-react';
+import { FolderOpen, Loader2 } from 'lucide-react';
 
 export function ActivitiesList() {
-  const activities = useWalletStore((state) => state.activities);
+  const { activities, loading, getActivityColor } = useWallet();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (activities.length === 0) {
     return (
@@ -37,7 +45,8 @@ export function ActivitiesList() {
         {activities.map((activity, index) => (
           <ActivityCard 
             key={activity.id} 
-            activity={activity} 
+            activity={activity}
+            color={getActivityColor(index)}
             index={index}
           />
         ))}

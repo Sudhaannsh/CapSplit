@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Minus, Wallet } from 'lucide-react';
+import { X, Plus, Minus, Wallet, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useWalletStore } from '@/store/useWalletStore';
+import { useWallet } from '@/contexts/WalletContext';
 import { toast } from 'sonner';
 
 interface AddMoneyModalProps {
@@ -16,33 +16,38 @@ const quickAmounts = [500, 1000, 2000, 5000, 10000];
 export function AddMoneyModal({ isOpen, onClose }: AddMoneyModalProps) {
   const [amount, setAmount] = useState('');
   const [isWithdraw, setIsWithdraw] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const addMoney = useWalletStore((state) => state.addMoney);
-  const withdrawMoney = useWalletStore((state) => state.withdrawMoney);
-  const getUnallocatedBalance = useWalletStore((state) => state.getUnallocatedBalance);
+  const { addMoney, withdrawMoney, getUnallocatedBalance } = useWallet();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const value = parseFloat(amount);
     if (!value || value <= 0) {
       toast.error('Please enter a valid amount');
       return;
     }
 
-    if (isWithdraw) {
-      const success = withdrawMoney(value);
-      if (success) {
-        toast.success(`Withdrew ₹${value.toLocaleString('en-IN')} from wallet`);
+    setIsSubmitting(true);
+
+    try {
+      if (isWithdraw) {
+        const success = await withdrawMoney(value);
+        if (success) {
+          toast.success(`Withdrew ₹${value.toLocaleString('en-IN')} from wallet`);
+          setAmount('');
+          onClose();
+        }
       } else {
-        toast.error('Insufficient unallocated funds');
-        return;
+        const success = await addMoney(value);
+        if (success) {
+          toast.success(`Added ₹${value.toLocaleString('en-IN')} to wallet`);
+          setAmount('');
+          onClose();
+        }
       }
-    } else {
-      addMoney(value);
-      toast.success(`Added ₹${value.toLocaleString('en-IN')} to wallet`);
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setAmount('');
-    onClose();
   };
 
   const handleQuickAmount = (value: number) => {
@@ -136,12 +141,19 @@ export function AddMoneyModal({ isOpen, onClose }: AddMoneyModalProps) {
 
                 <Button 
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                   className="w-full"
                   variant={isWithdraw ? 'destructive' : 'wallet'}
                   size="lg"
                 >
-                  <Wallet className="h-5 w-5" />
-                  {isWithdraw ? 'Withdraw' : 'Add to Wallet'}
+                  {isSubmitting ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Wallet className="h-5 w-5" />
+                      {isWithdraw ? 'Withdraw' : 'Add to Wallet'}
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
