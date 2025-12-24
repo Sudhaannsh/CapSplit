@@ -22,7 +22,7 @@ function WalletOrb() {
   
   return (
     <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-      <Sphere ref={meshRef} args={[1, 64, 64]} scale={scale}>
+      <Sphere ref={meshRef} args={[1, 32, 32]} scale={scale}>
         <MeshDistortMaterial
           color="#3dd9d0"
           attach="material"
@@ -57,7 +57,7 @@ function ActivityOrbs() {
         
         return (
           <Float key={activity.id} speed={3} rotationIntensity={0.3} floatIntensity={0.3}>
-            <Sphere args={[size, 32, 32]} position={[x, 0, z]}>
+            <Sphere args={[size, 16, 16]} position={[x, 0, z]}>
               <meshStandardMaterial
                 color={color}
                 roughness={0.3}
@@ -96,7 +96,8 @@ export function WalletScene() {
       <div className="absolute inset-0 bg-gradient-radial from-primary/10 via-transparent to-transparent pointer-events-none" />
       <Canvas
         camera={{ position: [0, 2, 5], fov: 50 }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
+        dpr={[1, 1.5]}
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>

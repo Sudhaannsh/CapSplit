@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
-import { WalletScene } from '@/components/3d/WalletScene';
 import { WalletCard } from '@/components/dashboard/WalletCard';
 import { ActivitiesList } from '@/components/dashboard/ActivitiesList';
-import { AddActivityModal } from '@/components/modals/AddActivityModal';
-import { AddMoneyModal } from '@/components/modals/AddMoneyModal';
-import { SegregateModal } from '@/components/modals/SegregateModal';
 import { useAuth } from '@/hooks/useAuth';
 import { WalletProvider } from '@/contexts/WalletContext';
 import { Loader2 } from 'lucide-react';
+
+// Lazy load heavy components
+const WalletScene = lazy(() => import('@/components/3d/WalletScene').then(m => ({ default: m.WalletScene })));
+const AddActivityModal = lazy(() => import('@/components/modals/AddActivityModal').then(m => ({ default: m.AddActivityModal })));
+const AddMoneyModal = lazy(() => import('@/components/modals/AddMoneyModal').then(m => ({ default: m.AddMoneyModal })));
+const SegregateModal = lazy(() => import('@/components/modals/SegregateModal').then(m => ({ default: m.SegregateModal })));
 
 const Index = () => {
   const [showAddActivity, setShowAddActivity] = useState(false);
@@ -48,7 +50,9 @@ const Index = () => {
 
         <main className="pt-24 pb-8">
           {/* 3D Wallet Scene */}
-          <WalletScene />
+          <Suspense fallback={<div className="w-full h-[300px] bg-background/50" />}>
+            <WalletScene />
+          </Suspense>
 
           {/* Wallet Balance Card */}
           <div className="-mt-8 relative z-10">
@@ -61,10 +65,12 @@ const Index = () => {
           </div>
         </main>
 
-        {/* Modals */}
-        <AddActivityModal isOpen={showAddActivity} onClose={() => setShowAddActivity(false)} />
-        <AddMoneyModal isOpen={showAddMoney} onClose={() => setShowAddMoney(false)} />
-        <SegregateModal isOpen={showSegregate} onClose={() => setShowSegregate(false)} />
+        {/* Modals - Only render when open */}
+        <Suspense fallback={null}>
+          {showAddActivity && <AddActivityModal isOpen={showAddActivity} onClose={() => setShowAddActivity(false)} />}
+          {showAddMoney && <AddMoneyModal isOpen={showAddMoney} onClose={() => setShowAddMoney(false)} />}
+          {showSegregate && <SegregateModal isOpen={showSegregate} onClose={() => setShowSegregate(false)} />}
+        </Suspense>
       </div>
     </WalletProvider>
   );
