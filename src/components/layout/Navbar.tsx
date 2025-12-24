@@ -26,7 +26,7 @@ export function Navbar({ onAddActivity, onAddMoney, onSegregate }: NavbarProps) 
     >
       <div className="glass-card mx-4 mt-4 px-4 py-3 flex items-center justify-between">
         <h1 className="text-lg font-display font-bold text-gradient">
-          MoneyFlow
+          CapSplit
         </h1>
         
         <div className="flex items-center gap-2">
